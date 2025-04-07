@@ -1,0 +1,1239 @@
+openapi: 3.0.0
+info:
+  title: TahiPay API
+  description: SaaS payment system that supports NZDD payments with both traditional and gasless payment flows
+  version: 1.0.0
+servers:
+  - url: https://api.tahipay.io/v1
+    description: Production server
+  - url: https://staging.tahipay.io/v1
+    description: Staging server
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for user authentication
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for merchant authentication
+
+  parameters:
+    merchantId:
+      name: merchantId
+      in: path
+      required: true
+      description: Unique ID of the merchant
+      schema:
+        type: string
+        format: uuid
+    productId:
+      name: productId
+      in: path
+      required: true
+      description: Unique ID of the product
+      schema:
+        type: integer
+    orderId:
+      name: orderId
+      in: path
+      required: true
+      description: Unique ID of the order
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    MerchantRegistration:
+      type: object
+      required:
+        - name
+        - email
+        - walletAddress
+      properties:
+        name:
+          type: string
+          example: "My Store"
+        email:
+          type: string
+          format: email
+          example: "merchant@example.com"
+        walletAddress:
+          type: string
+          description: Merchant's wallet address to receive payments
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        description:
+          type: string
+          example: "A trendy clothing store"
+        website:
+          type: string
+          format: uri
+          example: "https://mystore.com"
+        logo:
+          type: string
+          format: uri
+          example: "https://mystore.com/logo.png"
+
+    Merchant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "My Store"
+        email:
+          type: string
+          format: email
+          example: "merchant@example.com"
+        walletAddress:
+          type: string
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        description:
+          type: string
+          example: "A trendy clothing store"
+        website:
+          type: string
+          format: uri
+          example: "https://mystore.com"
+        logo:
+          type: string
+          format: uri
+          example: "https://mystore.com/logo.png"
+        apiKey:
+          type: string
+          example: "sk_test_1234567890abcdef"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    MerchantBalances:
+      type: object
+      properties:
+        nzddBalance:
+          type: string
+          description: NZDD balance in smallest unit (wei)
+          example: "1000000000000000000"
+        nzddBalanceFormatted:
+          type: string
+          description: NZDD balance in human-readable format
+          example: "1.0"
+        walletAddress:
+          type: string
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        tokenAddress:
+          type: string
+          description: NZDD token contract address
+          example: "0x2dd087589ce9c5b2d1b42e20d2519b3c8cf022b7"
+
+    ProductCreate:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        name:
+          type: string
+          example: "T-Shirt"
+        price:
+          type: number
+          format: float
+          description: Price in NZDD
+          example: 19.99
+        description:
+          type: string
+          example: "Cotton t-shirt with logo"
+        sku:
+          type: string
+          example: "TS-001-BLK-L"
+        image:
+          type: string
+          format: uri
+          example: "https://mystore.com/images/ts-001.jpg"
+        inStock:
+          type: boolean
+          default: true
+
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "T-Shirt V2"
+        price:
+          type: number
+          format: float
+          example: 21.99
+        description:
+          type: string
+          example: "Updated cotton t-shirt with new logo"
+        sku:
+          type: string
+          example: "TS-002-BLK-L"
+        image:
+          type: string
+          format: uri
+          example: "https://mystore.com/images/ts-002.jpg"
+        inStock:
+          type: boolean
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        merchantId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          example: "T-Shirt"
+        price:
+          type: number
+          format: float
+          example: 19.99
+        description:
+          type: string
+          example: "Cotton t-shirt with logo"
+        sku:
+          type: string
+          example: "TS-001-BLK-L"
+        image:
+          type: string
+          format: uri
+          example: "https://mystore.com/images/ts-001.jpg"
+        inStock:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderCreate:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: integer
+                example: 1
+              quantity:
+                type: integer
+                minimum: 1
+                example: 2
+        customerNote:
+          type: string
+          example: "Please gift wrap"
+        customerReference:
+          type: string
+          example: "ORDER-REF-123"
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        orderId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        productId:
+          type: integer
+          example: 1
+        productName:
+          type: string
+          example: "T-Shirt"
+        productPrice:
+          type: number
+          format: float
+          example: 19.99
+        quantity:
+          type: integer
+          example: 2
+        subtotal:
+          type: number
+          format: float
+          example: 39.98
+
+    OrderCreated:
+      type: object
+      properties:
+        orderId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        totalAmount:
+          type: number
+          format: float
+          example: 39.98
+        qrCode:
+          type: string
+          description: QR code data URL for payment
+          example: "data:image/png;base64,..."
+        paymentUri:
+          type: string
+          description: URI for payment app deep linking
+          example: "nzdd:0x1234567890abcdef1234567890abcdef12345678?amount=39.98&reference=123e4567-e89b-12d3-a456-426614174000"
+        paymentMethods:
+          type: array
+          description: Available payment methods for this order
+          items:
+            type: string
+            enum: [standard, gasless]
+          example: ["standard", "gasless"]
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        merchantId:
+          type: string
+          format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        status:
+          type: string
+          enum: [pending, approved, paid, cancelled]
+          example: "pending"
+        totalAmount:
+          type: number
+          format: float
+          example: 39.98
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        customerWallet:
+          type: string
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        paymentTxHash:
+          type: string
+          example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        customerNote:
+          type: string
+          example: "Please gift wrap"
+        customerReference:
+          type: string
+          example: "ORDER-REF-123"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        qrCode:
+          type: string
+          description: QR code data URL for payment
+          example: "data:image/png;base64,..."
+        paymentUri:
+          type: string
+          description: URI for payment app deep linking
+          example: "nzdd:0x1234567890abcdef1234567890abcdef12345678?amount=39.98&reference=123e4567-e89b-12d3-a456-426614174000"
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 100
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        pages:
+          type: integer
+          example: 5
+
+    TokenInfo:
+      type: object
+      properties:
+        address:
+          type: string
+          example: "0x2dd087589ce9c5b2d1b42e20d2519b3c8cf022b7"
+        name:
+          type: string
+          example: "New Zealand Digital Dollar"
+        symbol:
+          type: string
+          example: "NZDD"
+        decimals:
+          type: integer
+          example: 18
+        supportsPermit:
+          type: boolean
+          example: true
+        totalSupply:
+          type: string
+          example: "1000000000000000000000000"
+        chainId:
+          type: integer
+          example: 84532
+
+    GaslessPayment:
+      type: object
+      required:
+        - tokenAddress
+        - sender
+        - recipient
+        - amount
+        - deadline
+        - signature
+      properties:
+        tokenAddress:
+          type: string
+          description: Address of the ERC20 token
+          example: "0x2dd087589ce9c5b2d1b42e20d2519b3c8cf022b7"
+        sender:
+          type: string
+          description: Address of the sender (user's wallet)
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        recipient:
+          type: string
+          description: Address of the recipient (merchant's wallet)
+          example: "0xabcdef1234567890abcdef1234567890abcdef12"
+        amount:
+          type: string
+          description: Amount to transfer in smallest unit (wei)
+          example: "1000000000000000000"
+        deadline:
+          type: integer
+          description: Timestamp in seconds until when the signature is valid
+          example: 1729142399
+        collectFee:
+          type: boolean
+          description: Whether to collect a fee for the transaction
+          example: true
+        signature:
+          type: object
+          properties:
+            v:
+              type: integer
+              example: 27
+            r:
+              type: string
+              example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+            s:
+              type: string
+              example: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+
+    OrderGaslessPayment:
+      type: object
+      required:
+        - tokenAddress
+        - sender
+        - amount
+        - deadline
+        - signature
+      properties:
+        tokenAddress:
+          type: string
+          description: Address of the ERC20 token
+          example: "0x2dd087589ce9c5b2d1b42e20d2519b3c8cf022b7"
+        sender:
+          type: string
+          description: Address of the sender (user's wallet)
+          example: "0x1234567890abcdef1234567890abcdef12345678"
+        amount:
+          type: string
+          description: Amount to transfer in smallest unit (wei)
+          example: "39980000000000000000"
+        deadline:
+          type: integer
+          description: Timestamp in seconds until when the signature is valid
+          example: 1729142399
+        collectFee:
+          type: boolean
+          description: Whether to collect a fee for the transaction
+          example: true
+        clientId:
+          type: string
+          description: Optional client ID for WebSocket notifications
+        signature:
+          type: object
+          properties:
+            v:
+              type: integer
+              example: 27
+            r:
+              type: string
+              example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+            s:
+              type: string
+              example: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+
+    AuthError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "invalid_credentials"
+        message:
+          type: string
+          example: "Invalid email or password"
+        code:
+          type: integer
+          example: 401
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Merchant
+    description: Merchant management endpoints
+  - name: Products
+    description: Product management endpoints
+  - name: Orders
+    description: Order management endpoints
+  - name: Payments
+    description: Payment processing endpoints
+  - name: Gasless
+    description: Gasless payment endpoints using EIP-2612 permit
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login to the system
+      description: Authenticate a user and get JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "merchant@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for authentication
+                  merchantId:
+                    type: string
+                    format: uuid
+                  expiresIn:
+                    type: integer
+                    description: Token expiration time in seconds
+                  refreshToken:
+                    type: string
+                    description: Token for refreshing the access token
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Account locked or disabled
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: Get a new access token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh token received during login
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: New JWT token
+                  expiresIn:
+                    type: integer
+                    description: Token expiration time in seconds
+        '401':
+          description: Invalid refresh token
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout from the system
+      description: Invalidate the current session
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully logged out"
+        '401':
+          description: Invalid or expired token
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current user information
+      description: Retrieve information about the currently authenticated user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                    format: email
+                  merchantId:
+                    type: string
+                    format: uuid
+                  role:
+                    type: string
+                    enum: [merchant, admin]
+                  lastLogin:
+                    type: string
+                    format: date-time
+        '401':
+          description: Invalid or expired token
+
+  /merchants:
+    post:
+      tags:
+        - Merchant
+      summary: Register a new merchant
+      description: Create a new merchant account in the TahiPay system
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MerchantRegistration'
+      responses:
+        '201':
+          description: Merchant successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Merchant'
+        '400':
+          description: Invalid input
+
+  /merchants/{merchantId}:
+    get:
+      tags:
+        - Merchant
+      summary: Get merchant details
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Merchant'
+        '404':
+          description: Merchant not found
+    put:
+      tags:
+        - Merchant
+      summary: Update merchant details
+      description: Update merchant profile information
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "My Updated Store"
+                description:
+                  type: string
+                  example: "Updated store description"
+                website:
+                  type: string
+                  format: uri
+                  example: "https://updated-store.com"
+                logo:
+                  type: string
+                  format: uri
+                  example: "https://updated-store.com/logo.png"
+      responses:
+        '200':
+          description: Merchant successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Merchant'
+        '400':
+          description: Invalid input
+        '401':
+          description: Unauthorized
+        '404':
+          description: Merchant not found
+
+  /merchants/{merchantId}/balances:
+    get:
+      tags:
+        - Merchant
+      summary: Get merchant balances
+      description: Retrieve NZDD balance information for the merchant
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MerchantBalances'
+        '404':
+          description: Merchant not found
+    post:
+      tags:
+        - Merchant
+      summary: Transfer balance to another address
+      description: Transfer NZDD tokens from merchant's wallet to another address
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipientAddress
+                - amount
+              properties:
+                recipientAddress:
+                  type: string
+                  description: Address to receive the tokens
+                  example: "0xabcdef1234567890abcdef1234567890abcdef12"
+                amount:
+                  type: string
+                  description: Amount to transfer in smallest unit (wei)
+                  example: "1000000000000000000"
+                clientId:
+                  type: string
+                  description: Optional client ID for WebSocket notifications
+      responses:
+        '200':
+          description: Transfer initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  transactionHash:
+                    type: string
+                    description: Hash of the transfer transaction
+                  message:
+                    type: string
+                    example: "Transfer initiated"
+        '400':
+          description: Invalid input or insufficient balance
+        '401':
+          description: Unauthorized
+        '404':
+          description: Merchant not found
+
+  /merchants/{merchantId}/products:
+    get:
+      tags:
+        - Products
+      summary: Get all products for a merchant
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '404':
+          description: Merchant not found
+    post:
+      tags:
+        - Products
+      summary: Create a new product
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+      responses:
+        '201':
+          description: Product successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid input
+        '404':
+          description: Merchant not found
+
+  /merchants/{merchantId}/products/{productId}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - $ref: '#/components/parameters/productId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Product not found
+    put:
+      tags:
+        - Products
+      summary: Update product
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - $ref: '#/components/parameters/productId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Product successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Invalid input
+        '404':
+          description: Product not found
+    delete:
+      tags:
+        - Products
+      summary: Delete product
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - $ref: '#/components/parameters/productId'
+      responses:
+        '200':
+          description: Product successfully deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Product successfully deleted
+        '404':
+          description: Product not found
+
+  /merchants/{merchantId}/orders:
+    post:
+      tags:
+        - Orders
+      summary: Create a new order
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '201':
+          description: Order successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreated'
+        '400':
+          description: Invalid input
+        '404':
+          description: Merchant or product not found
+    get:
+      tags:
+        - Orders
+      summary: Get all orders for a merchant
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - name: status
+          in: query
+          description: Filter by order status
+          schema:
+            type: string
+            enum: [pending, approved, paid, cancelled]
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Items per page
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '404':
+          description: Merchant not found
+
+  /merchants/{merchantId}/orders/{orderId}:
+    get:
+      tags:
+        - Orders
+      summary: Get order details
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+
+  /merchants/{merchantId}/orders/{orderId}/approve:
+    post:
+      tags:
+        - Payments
+      summary: Approve payment for an order
+      description: Customer approves the payment amount for an order
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerWallet
+                - approvalTxHash
+              properties:
+                customerWallet:
+                  type: string
+                  description: Customer's wallet address
+                  example: "0x1234567890abcdef1234567890abcdef12345678"
+                approvalTxHash:
+                  type: string
+                  description: Transaction hash of the approval
+                  example: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Approval successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    example: "Payment approval recorded"
+        '400':
+          description: Invalid input
+        '404':
+          description: Order not found
+
+  /merchants/{merchantId}/orders/{orderId}/collect-payment:
+    post:
+      tags:
+        - Payments
+      summary: Collect payment for an order
+      description: Merchant collects the approved payment from customer's wallet
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clientId:
+                  type: string
+                  description: Optional client ID for WebSocket notifications
+      responses:
+        '200':
+          description: Payment collection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  transactionHash:
+                    type: string
+                  message:
+                    type: string
+        '400':
+          description: Invalid request or payment collection failed
+        '404':
+          description: Order not found
+
+  /merchants/{merchantId}/orders/{orderId}/pay-gasless:
+    post:
+      tags:
+        - Gasless
+        - Payments
+      summary: Pay for an order using gasless payment
+      description: Combined endpoint that links an order with a gasless payment using EIP-2612 permit
+      parameters:
+        - $ref: '#/components/parameters/merchantId'
+        - $ref: '#/components/parameters/orderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderGaslessPayment'
+      responses:
+        '200':
+          description: Payment successfully processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  order:
+                    $ref: '#/components/schemas/Order'
+                  transactionHash:
+                    type: string
+                  blockNumber:
+                    type: integer
+        '400':
+          description: Invalid input or payment failed
+        '401':
+          description: Invalid signature
+        '404':
+          description: Order not found
+
+  /gasless/token-info/{tokenAddress}:
+    get:
+      tags:
+        - Gasless
+      summary: Get information about a specific token
+      parameters:
+        - name: tokenAddress
+          in: path
+          required: true
+          description: Address of the ERC20 token
+          schema:
+            type: string
+      security:
+        - BearerAuth: []
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Token information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenInfo'
+        '404':
+          description: Token not found
+
+  /gasless/get-nonce/{tokenAddress}/{walletAddress}:
+    get:
+      tags:
+        - Gasless
+      summary: Get the current nonce for a wallet with a specific token's permit function
+      parameters:
+        - name: tokenAddress
+          in: path
+          required: true
+          description: Address of the ERC20 token
+          schema:
+            type: string
+        - name: walletAddress
+          in: path
+          required: true
+          description: Address of the user's wallet
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Nonce information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nonce:
+                    type: integer
+                    description: Current nonce for the wallet
+                  tokenAddress:
+                    type: string
+                    description: Address of the token
+                  walletAddress:
+                    type: string
+                    description: Address of the wallet
+        '400':
+          description: Invalid addresses
+        '404':
+          description: Token or wallet not found
+
+  /gasless/submit-transaction:
+    post:
+      tags:
+        - Gasless
+      summary: Submit a signed permit and execute a token transfer
+      description: Process a gasless payment using the EIP-2612 permit standard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GaslessPayment'
+      responses:
+        '200':
+          description: Transaction successfully submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  transactionHash:
+                    type: string
+                    description: Hash of the transaction on the blockchain
+                  blockNumber:
+                    type: integer
+                    description: Block number where the transaction was included
+        '400':
+          description: Invalid input or transaction failed
+        '401':
+          description: Invalid signature 
