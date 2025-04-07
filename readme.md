@@ -3,4 +3,4 @@
 - [OpenAPI Specification](api-spec.yaml)
 
 ### System Workflows
-- [UML Workflow Diagrams](kiwipay-workflow.md)
+- [UML Workflow Diagrams](TahiPay-UML.md)
